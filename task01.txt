@@ -1,0 +1,29 @@
+#Команда для запуска: bash EirikhRomanAleksandrovich_task01.txt PATH 'DATE' PATH_TO_CSV
+#DATE указывается в формате "YYYY-MM-DD HH:MM:SS"
+if [ "$#" != 3 ]; then
+    echo "Usage: bash $0 PATH 'DATE' PATH_TO_CSV"
+    echo "DATE format: 'YYYY-MM-DD HH:MM:SS'"
+    exit 1
+fi
+path="$1"
+DATETIME="$2"
+OUT_CSV_FILE_NAME="$3"
+#1
+find $path -name "*.txt" -newermt "$DATETIME" -type f
+#2
+get_attributes() {
+    local file="$1"
+    local scan_date=$(date +%Y-%m-%d)
+    local file_path="$file"
+    local file_name=$(basename "$file")
+    local modify_date=$(stat -c "%y" "$file" | cut -d '.' -f1)
+    local access_date=$(stat -c "%x" "$file" | cut -d '.' -f1)
+    local file_size_mb=$(du -m "$file" | cut -f1) #Размер в МБ округляется в большую сторону
+    local num_lines=$(wc -l < "$file") #Отсчёт строк идёт с нуля
+    echo "$scan_date,$file_path,$file_name,$modify_date,$access_date,$file_size_mb,$num_lines"
+}
+>$OUT_CSV_FILE_NAME #При каждом запуске выходной файл перезаписывается
+find "$path" -type f -name "*.txt" | while read -r file; do
+    attr=$(get_attributes "$file")
+    echo "$attr" >> $OUT_CSV_FILE_NAME
+done
